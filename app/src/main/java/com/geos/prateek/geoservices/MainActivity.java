@@ -157,7 +157,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 //                travelTime = String.valueOf(time.getText());
 //                maxCandidates = String.valueOf(resultNo.getText());
 
-                Log.i("GeoAPIs","getAddress");
+//                Log.i("GeoAPIs","getAddress");
                 resp = api.getEntityByLocation( longitude,  latitude,  brandName,  category,  maxCandidates,  searchRadius,  searchRadiusUnit,
                         searchDataset,  searchPriority,  travelTime,  travelTimeUnit,  travelDistance,  travelDistanceUnit,  mode);
                 Log.d("Resp", resp.toString());
