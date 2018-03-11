@@ -15,9 +15,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import pb.ApiClient;
 import pb.ApiException;
@@ -26,24 +31,48 @@ import pb.locationintelligence.LIAPIGeoEnrichServiceApi;
 import pb.locationintelligence.model.Locations;
 
 public class MainActivity extends AppCompatActivity implements LocationListener {
-    private TextView tv;
-    private Button bttn;
-    private Button lauch;
+    private TextView tvLat;
+    private TextView tvLong;
+    private Button coordBtn;
+    private Button getDetails;
+    private Spinner categorySp;
+    private EditText radIn;
+    private EditText time;
+    private EditText resultNo;
     private LocationManager locMgr;
-    private String[] loc = new String[2];
-    private String output;
     private Gson gson;
+    private JSONObject locationOut;
+    private String searchRadius;
+    private String searchRadiusUnit = "feet";
+    private String longitude;
+    private String latitude;
+    private String brandName = null;
+    private String category = null;
+    private String maxCandidates = null;
+    private String searchDataset = null;
+    private String searchPriority = null;
+    private String travelTime = null;
+    private String travelTimeUnit = null;
+    private String travelDistance = null;
+    private String travelDistanceUnit = null;
+    private String mode = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        tv = findViewById(R.id.textView);
-        bttn = findViewById(R.id.button);
-        lauch = findViewById(R.id.button2);
+        tvLat = findViewById(R.id.textViewLat);
+        tvLong = findViewById(R.id.textViewLong);
+
+        coordBtn = findViewById(R.id.button);
+        getDetails = findViewById(R.id.button2);
 
         locMgr = (LocationManager) getSystemService(LOCATION_SERVICE);
-
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        locMgr.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 0, this);
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
                 ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -52,17 +81,21 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             }
             return;
         } else {
-            bttn.setOnClickListener(new View.OnClickListener() {
+            coordBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     configure_button();
                 }
             });
-            lauch.setOnClickListener(new View.OnClickListener() {
+            getDetails.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     new MyAsyncTask().execute();
-                    tv.setText("Output: " + output);
+//                    if (output == null) {
+//                        tvLat.setText("Waiting for PitneyBowes...!!");
+//                    }else {
+//                        tvLat.setText(output);
+//                    }
                 }
             });
         }
@@ -74,17 +107,19 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             return;
         }
         locMgr.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 0, this);
-        if (loc[0] == null) {
-            tv.setText("Waiting for Location..!!\nClick Again");
-        } else {
-            tv.setText("Lat: " + loc[0] + " Long: " + loc[1]);
+        if (latitude == null) {
+            tvLat.setText("Waiting");
+            tvLong.setText("Waiting");
+        }else {
+            tvLat.setText("Lat: " + latitude);
+            tvLong.setText("Long: " + longitude);
         }
     }
 
     @Override
     public void onLocationChanged(Location location) {
-        loc[0] = String.valueOf(location.getLatitude());
-        loc[1] = String.valueOf(location.getLongitude());
+        latitude = String.valueOf(location.getLatitude());
+        longitude = String.valueOf(location.getLongitude());
     }
 
     @Override
@@ -113,19 +148,25 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
             final LIAPIGeoEnrichServiceApi api = new LIAPIGeoEnrichServiceApi();
 
-            String searchRadius = "2640";
-            String searchRadiusUnit = "feet";
-
             Locations resp = null;
 
             try {
+                // Getting values from user
+//                category = String.valueOf(categorySp.getSelectedItem());
+//                searchRadius = String.valueOf(radIn.getText());
+//                travelTime = String.valueOf(time.getText());
+//                maxCandidates = String.valueOf(resultNo.getText());
+
                 Log.i("GeoAPIs","getAddress");
-                resp = api.getAddress(loc[0], loc[1], searchRadius, searchRadiusUnit);
+                resp = api.getEntityByLocation( longitude,  latitude,  brandName,  category,  maxCandidates,  searchRadius,  searchRadiusUnit,
+                        searchDataset,  searchPriority,  travelTime,  travelTimeUnit,  travelDistance,  travelDistanceUnit,  mode);
                 Log.d("Resp", resp.toString());
                 gson = new Gson();
-                output = gson.toJson(resp);
-                Log.d("Out", output);
+                locationOut = new JSONObject(gson.toJson(resp));
+                Log.d("Out", locationOut.toString());
             } catch (ApiException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
                 e.printStackTrace();
             }
             return resp.toString();
@@ -140,9 +181,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         protected void onPreExecute() {}
 
         @Override
-        protected void onProgressUpdate(Void... values) {
-
-
-        }
+        protected void onProgressUpdate(Void... values) {}
     }
 }
