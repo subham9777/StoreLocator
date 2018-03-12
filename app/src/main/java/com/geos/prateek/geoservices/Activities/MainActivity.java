@@ -1,4 +1,4 @@
-package com.geos.prateek.geoservices;
+package com.geos.prateek.geoservices.Activities;
 
 import android.Manifest;
 import android.content.Intent;
@@ -19,6 +19,7 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.geos.prateek.geoservices.R;
 import com.google.gson.Gson;
 
 import org.json.JSONException;
@@ -42,13 +43,14 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private LocationManager locMgr;
     private Gson gson;
     private JSONObject locationOut;
+    public String res;
     private String searchRadius;
     private String searchRadiusUnit = "feet";
     private String longitude;
     private String latitude;
     private String brandName = null;
     private String category = null;
-    private String maxCandidates = null;
+    private String maxCandidates = "5";
     private String searchDataset = null;
     private String searchPriority = null;
     private String travelTime = null;
@@ -91,6 +93,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 @Override
                 public void onClick(View v) {
                     new MyAsyncTask().execute();
+                    Intent intent = new Intent(MainActivity.this, com.geos.prateek.geoservices.Activities.Places.class);
+                    startActivity(intent);
 //                    if (output == null) {
 //                        tvLat.setText("Waiting for PitneyBowes...!!");
 //                    }else {
@@ -135,6 +139,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     @Override
     public void onProviderDisabled(String provider) {
         Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+        intent.putExtra("jsonResponse",res);
         startActivity(intent);
     }
 
@@ -160,10 +165,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 //                Log.i("GeoAPIs","getAddress");
                 resp = api.getEntityByLocation( longitude,  latitude,  brandName,  category,  maxCandidates,  searchRadius,  searchRadiusUnit,
                         searchDataset,  searchPriority,  travelTime,  travelTimeUnit,  travelDistance,  travelDistanceUnit,  mode);
-                Log.d("Resp", resp.toString());
+//                Log.d("Resp", resp.toString());
                 gson = new Gson();
                 locationOut = new JSONObject(gson.toJson(resp));
                 Log.d("Out", locationOut.toString());
+                res = locationOut.toString();
             } catch (ApiException e) {
                 e.printStackTrace();
             } catch (JSONException e) {
@@ -174,7 +180,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         @Override
         protected void onPostExecute(String result) {
-            Log.i("Result",result);
+//            Log.i("Result",result);
         }
 
         @Override
