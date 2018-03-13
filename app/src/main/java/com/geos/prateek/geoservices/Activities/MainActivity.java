@@ -1,6 +1,7 @@
 package com.geos.prateek.geoservices.Activities;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -19,11 +20,21 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.geos.prateek.geoservices.R;
 import com.google.gson.Gson;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import pb.ApiClient;
 import pb.ApiException;
@@ -58,6 +69,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private String travelDistance = null;
     private String travelDistanceUnit = null;
     private String mode = null;
+    private ProgressDialog progressDialog;
+    private RequestQueue queue;
+    public List<com.geos.prateek.geoservices.Model.Location> locationList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +82,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         coordBtn = findViewById(R.id.button);
         getDetails = findViewById(R.id.button2);
+        queue = Volley.newRequestQueue(this);
+        locationList = new ArrayList<>();
 
         locMgr = (LocationManager) getSystemService(LOCATION_SERVICE);
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
@@ -144,6 +160,14 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     private class MyAsyncTask extends AsyncTask<String, Void, String> {
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            progressDialog = new ProgressDialog(MainActivity.this);
+            progressDialog.setMessage("Please Wait");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+        }
 
         @Override
         protected String doInBackground(String... params) {
@@ -168,23 +192,70 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 //                Log.d("Resp", resp.toString());
                 gson = new Gson();
                 locationOut = new JSONObject(gson.toJson(resp));
+
                 Log.d("Out", locationOut.toString());
-                res = locationOut.toString();
-            } catch (ApiException e) {
-                e.printStackTrace();
-            } catch (JSONException e) {
+//                res = locationOut.toString();
+
+            } catch (ApiException | JSONException e) {
                 e.printStackTrace();
             }
-            return resp.toString();
+            return res;
         }
 
         @Override
         protected void onPostExecute(String result) {
 //            Log.i("Result",result);
+            Log.i("json",result);
+            progressDialog.dismiss();
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, result, new Response.Listener<JSONObject>() {
+                @Override
+                public void onResponse(JSONObject response) {
+            try {
+                JSONArray locationArray = response.getJSONArray("location");
+                for (int i=0;i<locationArray.length();i++)
+                {
+                    JSONObject locObj = locationArray.getJSONObject(i);
+                    com.geos.prateek.geoservices.Model.Location loc = new com.geos.prateek.geoservices.Model.Location();
+                    if (locObj.has("distance")){
+                        JSONArray dist = response.getJSONArray("distance");
+                        String value = null;
+                        JSONObject distValue = dist.getJSONObject(dist.length());
+                        value = (distValue.getString("value"));
+//                        distance.setText("Distance : " + value + " Feet");
+                        Log.d("Distance : " ,value);
+                        loc.setDistance("Distance : " + value + " Feet");
+
+                    }else {
+                        loc.setDistance("N/A");
+                    }
+                    if (locObj.has("poi")){
+                        JSONArray poi = response.getJSONArray("poi");
+                        String alias = null;
+                        JSONObject distValue = poi.getJSONObject(poi.length());
+                        alias = (distValue.getString("alias"));
+//                        name.setText("Name : " + alias);
+                    }else {
+                        loc.setName("N/A");
+                    }
+                    locationList.add(loc);
+
+                }
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+
+                }
+            });
+            queue.add(jsonObjectRequest);
+
         }
 
-        @Override
-        protected void onPreExecute() {}
+
 
         @Override
         protected void onProgressUpdate(Void... values) {}

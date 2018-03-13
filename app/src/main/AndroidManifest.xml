@@ -20,8 +20,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".Activities.Locations" />
-        <activity android:name=".Activities.Places"></activity>
+        <activity android:name=".Activities.Places">
+
+        </activity>
     </application>
 
 </manifest>
