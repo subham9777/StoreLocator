@@ -205,7 +205,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         @Override
         protected void onPostExecute(String result) {
 //            Log.i("Result",result);
-            Log.i("json",result);
+            Log.i("json",result.toString());
             progressDialog.dismiss();
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, result, new Response.Listener<JSONObject>() {
                 @Override
