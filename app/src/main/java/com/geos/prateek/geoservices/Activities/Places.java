@@ -1,8 +1,11 @@
 package com.geos.prateek.geoservices.Activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.widget.TextView;
 
 import com.android.volley.RequestQueue;
@@ -10,6 +13,11 @@ import com.geos.prateek.geoservices.Data.LocationRecycleViewAdapter;
 import com.geos.prateek.geoservices.Model.Location;
 import com.geos.prateek.geoservices.R;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class Places extends AppCompatActivity {
@@ -22,84 +30,62 @@ public class Places extends AppCompatActivity {
     private TextView distance;
     private TextView address;
     private String jsonResponse;
+    private String resp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_places);
 
-//        Bundle bundle = getIntent().getExtras();
-//        if (bundle != null) {
-//            jsonResponse = bundle.getString("jsonResponse");
+        Intent intent = getIntent();
+        resp = intent.getStringExtra("ress");
+        Log.d("recieved",resp);
+        recyclerView = (RecyclerView)  findViewById(R.id.rec_view);
+        recyclerView.setHasFixedSize(true);
+
+        recyclerView.setLayoutManager(new LinearLayoutManager(Places.this));
+        locationList = new ArrayList<>();
+        locationList = getLocation(resp);
+
+        locationRecycleViewAdapter = new LocationRecycleViewAdapter(this,locationList);
+        recyclerView.setAdapter(locationRecycleViewAdapter);
+        locationRecycleViewAdapter.notifyDataSetChanged();
+
+//        getLocation(resp);
+
+//        try {
+//            JSONObject jsonObj = new JSONObject(getIntent().getStringExtra("ress"));
+//            JSONArray locationList = jsonObj.getJSONArray("location");
+//            for(int i=0; i<locationList.length(); i++){
+//
+//                Log.d("abc",locationList.getJSONObject(i).getJSONObject("poi").getString("alias") + " ");
+//                Log.d("cde",locationList.getJSONObject(i).getJSONObject("distance").getString("value"));
+//            }
+//        } catch (JSONException e) {
+//            e.printStackTrace();
 //        }
-//
-//        recyclerView = (RecyclerView)  findViewById(R.id.rec_view);
-//        recyclerView.setHasFixedSize(true);
-//        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-//        locationList = new ArrayList<>();
-//        getLocation(jsonResponse);
-//        queue = Volley.newRequestQueue(this);
-//        locationRecycleViewAdapter = new LocationRecycleViewAdapter(this,locationList);
-//        recyclerView.setAdapter(locationRecycleViewAdapter);
-//        locationRecycleViewAdapter.notifyDataSetChanged();
-//        setUI();
-//
-//    }
-//
-//    private void setUI() {
-//        name = findViewById(R.id.placeName);
-//        distance = findViewById(R.id.distance);
-//        address = findViewById(R.id.address1);
-//
-//    }
-//
-//    public List<Location> getLocation(final String search){
-//        locationList.clear();
-//
-//        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, search, new Response.Listener<JSONObject>() {
-//            @Override
-//            public void onResponse(JSONObject response) {
-//
-//                Log.d("json",search);
-//                try {
-//                    JSONArray locationArray = response.getJSONArray("location");
-//                    for (int i=0;i<locationArray.length();i++)
-//                    {
-//                        JSONObject locObj = locationArray.getJSONObject(i);
-//                        Location location = new Location();
-//                        if (locObj.has("distance")){
-//                            JSONArray dist = response.getJSONArray("distance");
-//                            String value = null;
-//                            JSONObject distValue = dist.getJSONObject(dist.length());
-//                            value = (distValue.getString("value"));
-//                            distance.setText("Distance : " + value + " Feet");
-//                        }else {
-//                            location.setDistance("N/A");
-//                        }
-//                        if (locObj.has("poi")){
-//                            JSONArray poi = response.getJSONArray("poi");
-//                            String alias = null;
-//                            JSONObject distValue = poi.getJSONObject(poi.length());
-//                            alias = (distValue.getString("alias"));
-//                            name.setText("Name : " + alias);
-//                        }else {
-//                            location.setName("N/A");
-//                        }
-//                    }
-//                    locationRecycleViewAdapter.notifyDataSetChanged();
-//
-//                } catch (JSONException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }, new Response.ErrorListener() {
-//            @Override
-//            public void onErrorResponse(VolleyError error) {
-//
-//            }
-//        });
-//        queue.add(jsonObjectRequest);
-//        return locationList;
-//    }
+
     }
+    public List<Location> getLocation(final String search){
+        locationList.clear();
+        try {
+            JSONObject jsonObj = new JSONObject(search);
+            JSONArray locList = jsonObj.getJSONArray("location");
+            for(int i=0; i<locList.length(); i++){
+                Location location = new Location();
+                location.setName("Name : " + locList.getJSONObject(i).getJSONObject("poi").getString("alias") + " ");
+
+                location.setDistance("Distance :" + locList.getJSONObject(i).getJSONObject("distance").getString("value") + " Feet");
+                location.setAddress("Address : " + locList.getJSONObject(i).getJSONObject("poi").getJSONObject("contactDetails").getJSONObject("address").getString("formattedAddress"));
+//                Log.d("abc",locList.getJSONObject(i).getJSONObject("poi").getString("alias") + " ");
+//                Log.d("cde",locList.getJSONObject(i).getJSONObject("distance").getString("value"));
+                locationList.add(location);
+            }
+//            locationRecycleViewAdapter.notifyDataSetChanged();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return locationList;
+//    }
+}
 }
