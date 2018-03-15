@@ -269,9 +269,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
-                    // permission was granted, yay! Do the
-                    // location-related task you need to do.
                     if (ContextCompat.checkSelfPermission(this,
                             Manifest.permission.ACCESS_FINE_LOCATION)
                             == PackageManager.PERMISSION_GRANTED) {
@@ -279,11 +276,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                         //Request location updates:
                         locMgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 400, 1, this);
                     }
-
-                } else {
-
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
 
                 }
                 return;
