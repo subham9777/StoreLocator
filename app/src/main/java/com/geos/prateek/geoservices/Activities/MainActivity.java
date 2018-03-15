@@ -2,6 +2,7 @@ package com.geos.prateek.geoservices.Activities;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -12,6 +13,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -20,11 +23,7 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 import com.geos.prateek.geoservices.R;
 import com.google.gson.Gson;
@@ -82,8 +81,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         coordBtn = findViewById(R.id.button);
         getDetails = findViewById(R.id.button2);
-        queue = Volley.newRequestQueue(this);
-        locationList = new ArrayList<>();
+//        queue = Volley.newRequestQueue(this);
+//        locationList = new ArrayList<>();
+
+        final boolean grant = checkLocationPermission();
 
         locMgr = (LocationManager) getSystemService(LOCATION_SERVICE);
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
@@ -127,6 +128,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             return;
         }
         locMgr.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 5000, 0, this);
+        Log.e("tag","working");
         if (latitude == null) {
             tvLat.setText("Waiting");
             tvLong.setText("Waiting");
@@ -180,16 +182,16 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             Locations resp = null;
 
             try {
-                // Getting values from user
+//                 Getting values from user
 //                category = String.valueOf(categorySp.getSelectedItem());
 //                searchRadius = String.valueOf(radIn.getText());
 //                travelTime = String.valueOf(time.getText());
 //                maxCandidates = String.valueOf(resultNo.getText());
 
-//                Log.i("GeoAPIs","getAddress");
+                Log.i("GeoAPIs","getAddress");
                 resp = api.getEntityByLocation( longitude,  latitude,  brandName,  category,  maxCandidates,  searchRadius,  searchRadiusUnit,
                         searchDataset,  searchPriority,  travelTime,  travelTimeUnit,  travelDistance,  travelDistanceUnit,  mode);
-//                Log.d("Resp", resp.toString());
+                Log.d("Resp", resp.toString());
                 gson = new Gson();
                 locationOut = new JSONObject(gson.toJson(resp));
                 Log.d("Out", locationOut.toString());
@@ -208,60 +210,85 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         @Override
         protected void onPostExecute(String result) {
-//            Log.i("Result",result);
-            Log.i("json",result.toString());
-//            progressDialog.dismiss();
-//            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, result, new Response.Listener<JSONObject>() {
-//                @Override
-//                public void onResponse(JSONObject response) {
-//            try {
-//                JSONArray locationArray = response.getJSONArray("location");
-//                for (int i=0;i<locationArray.length();i++)
-//                {
-//                    JSONObject locObj = locationArray.getJSONObject(i);
-//                    com.geos.prateek.geoservices.Model.Location loc = new com.geos.prateek.geoservices.Model.Location();
-//                    if (locObj.has("distance")){
-//                        JSONArray dist = response.getJSONArray("distance");
-//                        String value = null;
-//                        JSONObject distValue = dist.getJSONObject(dist.length());
-//                        value = (distValue.getString("value"));
-////                        distance.setText("Distance : " + value + " Feet");
-//                        Log.d("Distance : " ,value);
-//                        loc.setDistance("Distance : " + value + " Feet");
-//
-//                    }else {
-//                        loc.setDistance("N/A");
-//                    }
-//                    if (locObj.has("poi")){
-//                        JSONArray poi = response.getJSONArray("poi");
-//                        String alias = null;
-//                        JSONObject distValue = poi.getJSONObject(poi.length());
-//                        alias = (distValue.getString("alias"));
-////                        name.setText("Name : " + alias);
-//                    }else {
-//                        loc.setName("N/A");
-//                    }
-//                    locationList.add(loc);
-//
-//                }
-//
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
-//                }
-//            }, new Response.ErrorListener() {
-//                @Override
-//                public void onErrorResponse(VolleyError error) {
-//
-//                }
-//            });
-//            queue.add(jsonObjectRequest);
-//
+            Log.i("Result",result);
         }
 
 
 
         @Override
         protected void onProgressUpdate(Void... values) {}
+    }
+
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+
+    public boolean checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+                new AlertDialog.Builder(this)
+                        .setTitle("Location")
+                        .setMessage("Grant Permission")
+                        .setPositiveButton("Done", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                //Prompt the user once explanation has been shown
+                                ActivityCompat.requestPermissions(MainActivity.this,
+                                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                                        MY_PERMISSIONS_REQUEST_LOCATION);
+                            }
+                        })
+                        .create()
+                        .show();
+
+
+            } else {
+                // No explanation needed, we can request the permission.
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_LOCATION);
+            }
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // location-related task you need to do.
+                    if (ContextCompat.checkSelfPermission(this,
+                            Manifest.permission.ACCESS_FINE_LOCATION)
+                            == PackageManager.PERMISSION_GRANTED) {
+
+                        //Request location updates:
+                        locMgr.requestLocationUpdates(LocationManager.GPS_PROVIDER, 400, 1, this);
+                    }
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+
+                }
+                return;
+            }
+
+        }
     }
 }
